@@ -11,14 +11,15 @@
 #include <math.h>
 #include <unistd.h>     // needed to sleep
 
+#define INV -1
 
 /**********************************************************************/
 /*                       Declaração de variáveis                      */
 /**********************************************************************/
 
 static GLfloat spin = 0.0;
-const GLint proton_number = 20;
-const GLint neutron_number = 20;
+
+static GLint atom_index = 0;
 
 /*  Cores Prótons  */
 const GLfloat proton[] = { 1.0, 0.0, 0.0, 1.0 };
@@ -37,11 +38,34 @@ const GLfloat neutron_emission[] = {0.05, 0.05, 0.05, 1.0};
 
 const GLfloat high_shininess[] = { 100.0 };
 
+typedef struct Atom{
+	char sigla[3];
+	int protons;
+	int neutrons;
+	int alfa;
+	int beta;
+} Atom;
+
+const Atom decay[] = {
+	{"U",  92, 238-92,   1, INV}, // 0
+	{"Th", 90, 234-90, INV,   2}, // 1
+	{"Pa", 91, 234-91, INV,   3}, // 2
+	{"U",  92, 234-92,   4, INV}, // 3
+	{"Th", 90, 230-90,   5, INV}, // 4
+	{"Ra", 88, 226-88,   6, INV}, // 5
+	{"Rn", 86, 222-86,   7, INV}, // 6
+	{"Po", 84, 218-84,   8, INV}, // 7
+	{"Pb", 82, 214-82, INV, INV}, // 8
+};
+
+
+
 /**********************************************************************/
 /*                        Declaração de funções                       */
 /**********************************************************************/
 
 void init_glut(const char *window_name, int *argcp, char **argv);
+void draw_object(void);
 void display_callback(void);
 void reshape_callback(int w, int h);
 void animate_callback(void);
@@ -104,6 +128,13 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	glutMouseFunc(mouse_callback);
 	glutIdleFunc(animate_callback);
 
+    /* define o menu */
+    glutCreateMenu(menu_callback);
+    glutAddMenuEntry("Decaimento Alfa", 0);
+    glutAddMenuEntry("Decaimento Beta", 1);
+    glutAddMenuEntry("Sair", 2);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
+
 	GLfloat ambient[] = { 0.0, 0.0, 0.0, 1.0 };
 	GLfloat diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat specular[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -136,9 +167,11 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	return;
 }
 
-void display_callback(void)
+void draw_object(void)
 {
-	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	const GLint proton_number = decay[atom_index].protons;
+	const GLint neutron_number = decay[atom_index].neutrons;
 
 	glPushMatrix();
 		for(int i = 0; i < proton_number; i++){
@@ -165,6 +198,14 @@ void display_callback(void)
 			glPopMatrix();
 		}
 	glPopMatrix();
+}
+
+void display_callback(void)
+{
+	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	draw_object();
+
 	glutSwapBuffers();
 }
 
@@ -246,8 +287,23 @@ void animate_callback(void)
  */
 void keyboard_callback(unsigned char key, int x, int y)
 {
-	if (key == 27)
+	switch (key)
+	{
+	case 'a':
+	case 'A':
+		if(decay[atom_index].alfa > INV) atom_index = decay[atom_index].alfa;
+		break;
+	case 'b':
+	case 'B':
+		if(decay[atom_index].beta > INV) atom_index = decay[atom_index].beta;
+		break;
+	case 27:
 		exit(0); /* Esc: sai do programa */
+		break;
+
+	default:
+		break;
+	}
 	return;
 }
 
@@ -277,6 +333,33 @@ void keyboard_callback_special(int key, int x, int y)
 	return;
 }
 
+/*
+ * Função callback para o controlo do menu
+ */
+void menu_callback(int value){
+    switch(value){
+        case 0:
+			if(decay[atom_index].alfa > INV) atom_index = decay[atom_index].alfa;
+		break;
+
+        case 1:
+			if(decay[atom_index].beta > INV) atom_index = decay[atom_index].beta;
+            break;
+
+        case 2:
+            exit(0);                    /* Opção 4: sai do programa */
+            break;
+
+        default:
+            break;
+    }
+
+    /* Manda o redesenhar o ecr� quando o menu for desactivado */
+    glutPostRedisplay();
+
+    return;
+}
+
 void spinDisplay(void)
 {
 	spin = spin + 0.5;
@@ -287,6 +370,8 @@ void spinDisplay(void)
 
 void mouse_callback(int button, int state, int x, int y)
 {
+	printf("(%d,%d)\n", x, y);
+	fflush(stdout);
 	switch (button)
 	{
 	case GLUT_LEFT_BUTTON:
