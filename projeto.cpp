@@ -21,6 +21,8 @@ static GLfloat spin = 0.0;
 
 static GLint atom_index = 0;
 
+const GLfloat text_ambient[] = { 0.0, 1.0, 0.0, 1.0 };
+
 /*  Cores Prótons  */
 const GLfloat proton[] = { 1.0, 0.0, 0.0, 1.0 };
 const GLfloat proton_ambient[] = { 0.8, 0.0, 0.0, 1.0 };
@@ -116,7 +118,7 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 
 	/* inicia o display usando RGB e double-buffering */
    	glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize(500, 500);
+	glutInitWindowSize(1000, 1000);
 	glutInitWindowPosition(100, 100);
 	glutCreateWindow(nome_janela);
 
@@ -147,11 +149,11 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	glEnable(GL_DEPTH_TEST);		        // Enables Depth Testing
 	glShadeModel(GL_SMOOTH);
 
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
+	// glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
+	// glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
 	glLightfv(GL_LIGHT0, GL_POSITION, position);
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-	glLightModelfv(GL_LIGHT_MODEL_LOCAL_VIEWER, local_view);
+	// glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+	// glLightModelfv(GL_LIGHT_MODEL_LOCAL_VIEWER, local_view);
 
 	// glClearDepth(1.0);				// Enables Clearing Of The Depth Buffer
 	// glDepthFunc(GL_LESS);			        // The Type Of Depth Test To Do
@@ -162,7 +164,7 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	// glMatrixMode(GL_PROJECTION);
 
 	/* define a cor de desenho inicial (azul) */
-	glColor3f(0.0, 0.0, 1.0);
+	// glColor3f(1.0, 1.0, 1.0);
 
 	return;
 }
@@ -193,11 +195,35 @@ void draw_object(void)
 		for(int i = 0; i < proton_number; i++){
 			glPushMatrix();
 				glRotatef ((GLfloat) spin + i * 360.0 / proton_number, 0.0, 1.0, 0.0);
-				glTranslatef (2.0+0.2*(i%2), 0.0, 0.0);
+				glTranslatef (2.0+0.5*(i%5), 0.0, 0.0);
 				draw_eletron();
 			glPopMatrix();
 		}
 	glPopMatrix();
+}
+
+void interface_text(){
+	const char* menu = decay[atom_index].sigla;
+	glMatrixMode( GL_PROJECTION );
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D( 0, 500, 0, 500 );
+
+	glMatrixMode( GL_MODELVIEW );
+	glPushMatrix();
+	glLoadIdentity();
+	// glRasterPos2i( 200, 100 );
+	glRasterPos3i( 200, 100, 1 );
+
+	// glColor3f( 1.0, 0.0, 0.0 );
+	for ( int i = 0; menu[i] != '\0'; ++i ) {
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, menu[i]);
+	}
+	glPopMatrix();
+
+	glMatrixMode( GL_PROJECTION );
+	glPopMatrix();
+	glMatrixMode( GL_MODELVIEW );
 }
 
 void display_callback(void)
@@ -205,6 +231,7 @@ void display_callback(void)
 	glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	draw_object();
+	interface_text();
 
 	glutSwapBuffers();
 }
@@ -216,25 +243,34 @@ void draw_particle(void){
 void draw_eletron(void){
 	glMaterialfv(GL_FRONT, GL_AMBIENT, eletron_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, eletron);
-	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	glMaterialfv(GL_FRONT, GL_EMISSION, eletron_emission);
+	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	draw_particle();
+	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
+	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
 }
 
 void draw_proton(void){
 	glMaterialfv(GL_FRONT, GL_AMBIENT, proton_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, proton);
-	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	glMaterialfv(GL_FRONT, GL_EMISSION, proton_emission);
+	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	draw_particle();
+	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
+	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
 }
 
 void draw_neutron(void){
 	glMaterialfv(GL_FRONT, GL_AMBIENT, neutron_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, neutron);
-	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	glMaterialfv(GL_FRONT, GL_EMISSION, neutron_emission);
+	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	draw_particle();
+	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
+	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
 }
 
 /*
@@ -296,6 +332,10 @@ void keyboard_callback(unsigned char key, int x, int y)
 	case 'b':
 	case 'B':
 		if(decay[atom_index].beta > INV) atom_index = decay[atom_index].beta;
+		break;
+	case 'u':
+	case 'U':
+		atom_index = 0;
 		break;
 	case 27:
 		exit(0); /* Esc: sai do programa */
