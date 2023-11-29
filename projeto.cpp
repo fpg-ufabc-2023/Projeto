@@ -59,17 +59,38 @@ const Atom decay[] = {
 	{"Po", 84, 218-84,   8,   9}, // 7
 	{"Pb", 82, 214-82, INV,  10}, // 8
 	{"At", 84, 218-85,  10, INV}, // 9
-	{"Bi", 83, 218-85,  11,  12}, // 10
-	{"Ti", 81, 218-85, INV,  13}, // 11
-	{"Po", 84, 218-85,  13, INV}, // 12
-	{"Pb", 82, 218-85,  14,  15}, // 13
-	{"Hg", 80, 218-85, INV,  16}, // 14
-	{"Bi", 83, 218-85,  16,  17}, // 15
-	{"Ti", 81, 218-85, INV,  18}, // 16
-	{"Po", 84, 218-85,  18, INV}, // 17
-	{"Pb", 82, 218-85, INV, INV}, // 18
+	{"Bi", 83, 214-83,  11,  12}, // 10
+	{"Ti", 81, 210-81, INV,  13}, // 11
+	{"Po", 84, 214-84,  13, INV}, // 12
+	{"Pb", 82, 210-82,  14,  15}, // 13
+	{"Hg", 80, 206-80, INV,  16}, // 14
+	{"Bi", 83, 210-83,  16,  17}, // 15
+	{"Ti", 81, 206-81, INV,  18}, // 16
+	{"Po", 84, 210-84,  18, INV}, // 17
+	{"Pb", 82, 206-82, INV, INV}, // 18
 };
 
+const char* text_Atom[]={
+		"Massa: 238 \nN° atômico: 92",
+		"Massa: 234 \nN° atômico: 90",
+		"Massa: 234 \nN° atômico: 91",
+		"Massa: 234 \nN° atômico: 92",
+		"Massa: 230 \nN° atômico: 90",
+		"Massa: 226 \nN° atômico: 88",
+		"Massa: 222 \nN° atômico: 86",
+		"Massa: 218 \nN° atômico: 84",
+		"Massa: 214 \nN° atômico: 82",
+		"Massa: 218 \nN° atômico: 85",
+		"Massa: 214 \nN° atômico: 83",
+		"Massa: 210 \nN° atômico: 81",
+		"Massa: 214 \nN° atômico: 84",
+		"Massa: 210 \nN° atômico: 82",
+		"Massa: 206 \nN° atômico: 80",
+		"Massa: 210 \nN° atômico: 83",
+		"Massa: 206 \nN° atômico: 81",
+		"Massa: 210 \nN° atômico: 84",
+		"Massa: 206 \nN° atômico: 82",	
+};
 
 
 /**********************************************************************/
@@ -89,6 +110,7 @@ void draw_particle(void);
 void draw_eletron(void);
 void draw_proton(void);
 void draw_neutron(void);
+void render_text(const char* text, int x, int y);
 
 
 /**********************************************************************/
@@ -212,8 +234,25 @@ void draw_object(void)
 	glPopMatrix();
 }
 
+void render_text(const char* text, int x, int y){
+		glRasterPos3i(x,y,1);
+		
+		for(int i=0; text[i]!= '\0'; ++i){
+			
+			if (text[i] =='\n'){ //caso de quebra de linha
+				y = y-20;
+				glRasterPos3i(x,y,1);
+			}
+			
+			else{
+				glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, text[i]);
+			}
+		}
+}
+
 void interface_text(){
 	const char* menu = decay[atom_index].sigla;
+	
 	glMatrixMode( GL_PROJECTION );
 	glPushMatrix();
 	glLoadIdentity();
@@ -229,6 +268,13 @@ void interface_text(){
 	for ( int i = 0; menu[i] != '\0'; ++i ) {
 		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, menu[i]);
 	}
+	
+	
+	
+	const char* text = text_Atom[atom_index];
+	
+	render_text(text, 200,100 -30);
+	
 	glPopMatrix();
 
 	glMatrixMode( GL_PROJECTION );
