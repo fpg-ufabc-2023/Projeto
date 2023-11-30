@@ -42,6 +42,10 @@ const GLfloat high_shininess[] = {100.0};
 
 const GLint camadas[] = {2, 8, 18, 32, 32, 18, 8};
 
+const GLint frampes_per_second = 60;
+
+GLboolean rotating = true;
+
 char vec[100];
 
 typedef struct Atom
@@ -54,27 +58,30 @@ typedef struct Atom
 } Atom;
 
 const Atom decay[] = {
-	{"U", 92, 238 - 92, 1, INV},	// 0
+	{"U",  92, 238 - 92, 1,   INV},	// 0
 	{"Th", 90, 234 - 90, INV, 2},	// 1
 	{"Pa", 91, 234 - 91, INV, 3},	// 2
-	{"U", 92, 234 - 92, 4, INV},	// 3
-	{"Th", 90, 230 - 90, 5, INV},	// 4
-	{"Ra", 88, 226 - 88, 6, INV},	// 5
-	{"Rn", 86, 222 - 86, 7, INV},	// 6
-	{"Po", 84, 218 - 84, 8, 9},		// 7
+	{"U",  92, 234 - 92, 4,   INV},	// 3
+	{"Th", 90, 230 - 90, 5,   INV},	// 4
+	{"Ra", 88, 226 - 88, 6,   INV},	// 5
+	{"Rn", 86, 222 - 86, 7,   INV},	// 6
+	{"Po", 84, 218 - 84, 8,   9},	// 7
 	{"Pb", 82, 214 - 82, INV, 10},	// 8
-	{"At", 84, 218 - 85, 10, INV},	// 9
-	{"Bi", 83, 214 - 83, 11, 12},	// 10
+	{"At", 84, 218 - 85, 10,  INV},	// 9
+	{"Bi", 83, 214 - 83, 11,  12},	// 10
 	{"Ti", 81, 210 - 81, INV, 13},	// 11
-	{"Po", 84, 214 - 84, 13, INV},	// 12
-	{"Pb", 82, 210 - 82, 14, 15},	// 13
+	{"Po", 84, 214 - 84, 13,  INV},	// 12
+	{"Pb", 82, 210 - 82, 14,  15},	// 13
 	{"Hg", 80, 206 - 80, INV, 16},	// 14
-	{"Bi", 83, 210 - 83, 16, 17},	// 15
+	{"Bi", 83, 210 - 83, 16,  17},	// 15
 	{"Ti", 81, 206 - 81, INV, 18},	// 16
-	{"Po", 84, 210 - 84, 18, INV},	// 17
+	{"Po", 84, 210 - 84, 18,  INV},	// 17
 	{"Pb", 82, 206 - 82, INV, INV}, // 18
 };
 
+const char *text_Atom = "Massa: %d \nN° atômico: %d";
+
+/*
 const char *text_Atom[] = {
 	"Massa: 238 \nN° atômico: 92",
 	"Massa: 234 \nN° atômico: 90",
@@ -96,6 +103,7 @@ const char *text_Atom[] = {
 	"Massa: 210 \nN° atômico: 84",
 	"Massa: 206 \nN° atômico: 82",
 };
+*/
 
 /**********************************************************************/
 /*                        Declaração de funções                       */
@@ -104,6 +112,7 @@ const char *text_Atom[] = {
 void init_glut(const char *window_name, int *argcp, char **argv);
 void draw_object(void);
 void display_callback(void);
+void spinDisplay(void);
 void reshape_callback(int w, int h);
 void animate_callback(void);
 void keyboard_callback(unsigned char key, int x, int y);
@@ -200,7 +209,7 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	/* define a cor de desenho inicial (azul) */
 	// glColor3f(1.0, 1.0, 1.0);
 
-	glutTimerFunc( 1000 /*ms*/, timer_callback, 0);
+	glutTimerFunc(1000 / frampes_per_second /*ms*/, timer_callback, 0);
 
 	return;
 }
@@ -218,9 +227,8 @@ void draw_object(void)
 	{
 		glPushMatrix();
 
-
-		glRotatef(360.0*(rand()%100-50)/50.0, (rand()%100-50)/50.0, (rand()%100-50)/50.0, (rand()%100-50)/50.0);
-		glTranslatef(0.5 + 0.1*(rand()%100-50)/50.0,0,0);
+		glRotatef(360.0 * (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0);
+		glTranslatef(0.5 + 0.1 * (rand() % 100 - 50) / 50.0, 0, 0);
 
 		// glRotatef((GLfloat)i * 360.0 / proton_number, 0.0, 1.0, 0.0);
 		// glTranslatef(0.5 * (rand()%100-50)/50.0, 0.5 * (rand()%100-50)/50.0, 0.5 * (rand()%100-50)/50.0);
@@ -232,9 +240,8 @@ void draw_object(void)
 	{
 		glPushMatrix();
 
-
-		glRotatef(360.0*(rand()%100-50)/50.0, (rand()%100-50)/50.0, (rand()%100-50)/50.0, (rand()%100-50)/50.0);
-		glTranslatef(0.5 + 0.1*(rand()%100-50)/50.0,0,0);
+		glRotatef(360.0 * (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0);
+		glTranslatef(0.5 + 0.1 * (rand() % 100 - 50) / 50.0, 0, 0);
 
 		// glRotatef((GLfloat)(i * 360.0 / neutron_number + 180.0 / proton_number), 0.0, 1.0, 0.0);
 		// glTranslatef(-0.5 * (rand()%100-50)/50.0, -0.5 * (rand()%100-50)/50.0, -0.5 * (rand()%100-50)/50.0);
@@ -242,17 +249,21 @@ void draw_object(void)
 		glPopMatrix();
 	}
 
-	for (int i = 0; i< sizeof(camadas); i++){
-		for(int j = 0; j<camadas[i]; j++){
+	for (int i = 0; i < sizeof(camadas); i++)
+	{
+		for (int j = 0; j < camadas[i]; j++)
+		{
 			glPushMatrix();
-			glRotatef((GLfloat)spin + j * 360.0 / camadas[i], 0.0, 1.0, 0.0);
-			glTranslatef(1.5 + 0.75  * i, 0.0, 0.0);
+			glRotatef((GLfloat)spin + j * 360.0 / camadas[i] + 1 * (rand()%100-50)/50.0, 0.0, 1.0, 0.0);
+			glTranslatef(1.5 + 0.75 * i + 0.1 * (rand()%100-50)/50.0, 0.0, 0.0);
 			draw_eletron();
 			glPopMatrix();
 			eletron_number++;
-			if(eletron_number == proton_number) break;
+			if (eletron_number == proton_number)
+				break;
 		}
-		if(eletron_number == proton_number) break;
+		if (eletron_number == proton_number)
+			break;
 	}
 	// for (int i = 0; i < proton_number; i++)
 	// {
@@ -306,7 +317,9 @@ void interface_text()
 		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, menu[i]);
 	}
 
-	const char *text = text_Atom[atom_index];
+	char text[100];
+
+	sprintf(text, text_Atom, decay[atom_index].protons + decay[atom_index].neutrons, decay[atom_index].protons);
 
 	render_text(text, 200, 100 - 30);
 
@@ -327,9 +340,10 @@ void display_callback(void)
 	glutSwapBuffers();
 }
 
-void timer_callback(int i){
-	glutPostRedisplay();
-	glutTimerFunc( 1000, timer_callback, 0);
+void timer_callback(int i)
+{
+	spinDisplay();
+	glutTimerFunc(1000 / frampes_per_second, timer_callback, 0);
 }
 
 void draw_particle(float radius)
@@ -425,8 +439,6 @@ void animate_callback(void)
  */
 void keyboard_callback(unsigned char key, int x, int y)
 {
-	sprintf(vec, "Massa: %d \nN° atômico: %d", decay[atom_index].protons + decay[atom_index].neutrons, decay[atom_index].protons);
-	printf("%s\n", vec);
 	switch (key)
 	{
 	case 'a':
@@ -442,6 +454,14 @@ void keyboard_callback(unsigned char key, int x, int y)
 	case 'u':
 	case 'U':
 		atom_index = 0;
+		break;
+	case 'r':
+	case 'R':
+		rotating = true;
+		break;
+	case 's':
+	case 'S':
+		rotating = false;
 		break;
 	case 27:
 		exit(0); /* Esc: sai do programa */
@@ -512,11 +532,13 @@ void menu_callback(int value)
 
 void spinDisplay(void)
 {
-	spin = spin + 0.5;
-	if (spin > 360.0)
-		spin = spin - 360.0;
+	if (rotating)
+	{
+		spin = spin + 0.5;
+		if (spin > 360.0)
+			spin = spin - 360.0;
+	}
 	glutPostRedisplay();
-	usleep(100);
 }
 
 void mouse_callback(int button, int state, int x, int y)
@@ -527,12 +549,12 @@ void mouse_callback(int button, int state, int x, int y)
 	{
 	case GLUT_LEFT_BUTTON:
 		if (state == GLUT_DOWN)
-			glutIdleFunc(spinDisplay);
+			rotating = true;
 		break;
 	case GLUT_MIDDLE_BUTTON:
 	case GLUT_RIGHT_BUTTON:
 		if (state == GLUT_DOWN)
-			glutIdleFunc(glutPostRedisplay);
+			rotating = false;
 		break;
 	default:
 		break;
