@@ -40,6 +40,8 @@ const GLfloat neutron_emission[] = {0.05, 0.05, 0.05, 1.0};
 
 const GLfloat high_shininess[] = {100.0};
 
+const GLint camadas[] = {2, 8, 18, 32, 32, 18, 8};
+
 char vec[100];
 
 typedef struct Atom
@@ -108,7 +110,8 @@ void keyboard_callback(unsigned char key, int x, int y);
 void keyboard_callback_special(int key, int x, int y);
 void mouse_callback(int button, int state, int x, int y);
 void menu_callback(int value);
-void draw_particle(void);
+void timer_callback(int i);
+void draw_particle(float radius);
 void draw_eletron(void);
 void draw_proton(void);
 void draw_neutron(void);
@@ -159,7 +162,7 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	glutReshapeFunc(reshape_callback);
 	glutSpecialFunc(keyboard_callback_special);
 	glutMouseFunc(mouse_callback);
-	glutIdleFunc(animate_callback);
+	// glutIdleFunc(animate_callback);
 
 	/* define o menu */
 	glutCreateMenu(menu_callback);
@@ -197,6 +200,8 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	/* define a cor de desenho inicial (azul) */
 	// glColor3f(1.0, 1.0, 1.0);
 
+	glutTimerFunc( 1000 /*ms*/, timer_callback, 0);
+
 	return;
 }
 
@@ -206,12 +211,19 @@ void draw_object(void)
 	const GLint proton_number = decay[atom_index].protons;
 	const GLint neutron_number = decay[atom_index].neutrons;
 
+	GLint eletron_number = 0;
+
 	glPushMatrix();
 	for (int i = 0; i < proton_number; i++)
 	{
 		glPushMatrix();
-		glRotatef((GLfloat)i * 360.0 / proton_number, 0.0, 1.0, 0.0);
-		glTranslatef(0.6 - 0.3 * (i % 5), 0.0, 0.0);
+
+
+		glRotatef(360.0*(rand()%100-50)/50.0, (rand()%100-50)/50.0, (rand()%100-50)/50.0, (rand()%100-50)/50.0);
+		glTranslatef(0.5 + 0.1*(rand()%100-50)/50.0,0,0);
+
+		// glRotatef((GLfloat)i * 360.0 / proton_number, 0.0, 1.0, 0.0);
+		// glTranslatef(0.5 * (rand()%100-50)/50.0, 0.5 * (rand()%100-50)/50.0, 0.5 * (rand()%100-50)/50.0);
 		draw_proton();
 		glPopMatrix();
 	}
@@ -219,20 +231,37 @@ void draw_object(void)
 	for (int i = 0; i < neutron_number; i++)
 	{
 		glPushMatrix();
-		glRotatef((GLfloat)(i * 360.0 / neutron_number + 180.0 / proton_number), 0.0, 1.0, 0.0);
-		glTranslatef(0.4 + 0.2 * (i % 3), 0.0, 0.0);
+
+
+		glRotatef(360.0*(rand()%100-50)/50.0, (rand()%100-50)/50.0, (rand()%100-50)/50.0, (rand()%100-50)/50.0);
+		glTranslatef(0.5 + 0.1*(rand()%100-50)/50.0,0,0);
+
+		// glRotatef((GLfloat)(i * 360.0 / neutron_number + 180.0 / proton_number), 0.0, 1.0, 0.0);
+		// glTranslatef(-0.5 * (rand()%100-50)/50.0, -0.5 * (rand()%100-50)/50.0, -0.5 * (rand()%100-50)/50.0);
 		draw_neutron();
 		glPopMatrix();
 	}
 
-	for (int i = 0; i < proton_number; i++)
-	{
-		glPushMatrix();
-		glRotatef((GLfloat)spin + i * 360.0 / proton_number, 0.0, 1.0, 0.0);
-		glTranslatef(2.0 + 0.5 * (i % 5), 0.0, 0.0);
-		draw_eletron();
-		glPopMatrix();
+	for (int i = 0; i< sizeof(camadas); i++){
+		for(int j = 0; j<camadas[i]; j++){
+			glPushMatrix();
+			glRotatef((GLfloat)spin + j * 360.0 / camadas[i], 0.0, 1.0, 0.0);
+			glTranslatef(1.5 + 0.75  * i, 0.0, 0.0);
+			draw_eletron();
+			glPopMatrix();
+			eletron_number++;
+			if(eletron_number == proton_number) break;
+		}
+		if(eletron_number == proton_number) break;
 	}
+	// for (int i = 0; i < proton_number; i++)
+	// {
+	// 	glPushMatrix();
+	// 	glRotatef((GLfloat)spin + i * 360.0 / proton_number, 0.0, 1.0, 0.0);
+	// 	glTranslatef(2.0 + 0.5 * (i % 5), 0.0, 0.0);
+	// 	draw_eletron();
+	// 	glPopMatrix();
+	// }
 	glPopMatrix();
 }
 
@@ -298,9 +327,14 @@ void display_callback(void)
 	glutSwapBuffers();
 }
 
-void draw_particle(void)
+void timer_callback(int i){
+	glutPostRedisplay();
+	glutTimerFunc( 1000, timer_callback, 0);
+}
+
+void draw_particle(float radius)
 {
-	glutSolidSphere(0.2, 10, 8);
+	glutSolidSphere(radius, 10, 8);
 }
 
 void draw_eletron(void)
@@ -309,7 +343,7 @@ void draw_eletron(void)
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, eletron);
 	glMaterialfv(GL_FRONT, GL_EMISSION, eletron_emission);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
-	draw_particle();
+	draw_particle(0.075);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
 	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
@@ -321,7 +355,7 @@ void draw_proton(void)
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, proton);
 	glMaterialfv(GL_FRONT, GL_EMISSION, proton_emission);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
-	draw_particle();
+	draw_particle(0.1);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
 	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
@@ -333,7 +367,7 @@ void draw_neutron(void)
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, neutron);
 	glMaterialfv(GL_FRONT, GL_EMISSION, neutron_emission);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
-	draw_particle();
+	draw_particle(0.1);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
 	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
