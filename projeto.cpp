@@ -254,8 +254,8 @@ void draw_object(void)
 		for (int j = 0; j < camadas[i]; j++)
 		{
 			glPushMatrix();
-			glRotatef((GLfloat)spin + j * 360.0 / camadas[i] + 1 * (rand()%100-50)/50.0, 0.0, 1.0, 0.0);
-			glTranslatef(1.5 + 0.75 * i + 0.1 * (rand()%100-50)/50.0, 0.0, 0.0);
+			glRotatef((GLfloat)spin + j * 360.0 / camadas[i] + 2.5 * (rand()%100-50)/50.0, 0.0, 1.0, 0.0);
+			glTranslatef(1.5 + 0.75 * i + 0.05 * (rand()%100-50)/50.0, 0.0, 0.0);
 			draw_eletron();
 			glPopMatrix();
 			eletron_number++;
