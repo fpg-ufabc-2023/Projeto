@@ -1,6 +1,6 @@
 /*
  * projeto.cpp
- * gcc projeto.cpp -o /tmp/temp.run -lm -lglut -lGL -lGLU && /tmp/temp.run
+ * g++ projeto.cpp -o /tmp/temp.run -lm -lglut -lGL -lGLU && /tmp/temp.run
  */
 
 #include <GL/gl.h>
@@ -10,7 +10,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>     // needed to sleep
+#include <iostream>
 
+using namespace std;
 
 /**********************************************************************/
 /*                       Declaração de variáveis                      */
@@ -64,6 +66,11 @@ void draw_neutron(void);
 
 int main(int argc, char **argv)
 {
+	char atomicNumber[3];
+
+	//Entrada do elemento
+	cout << "Entre com o número atômico do elemento desejado:" << endl;
+	cin.getline(atomicNumber, 3);	
 
 	/* inicia o GLUT e alguns parâmetros do OpenGL */
 	init_glut("Projeto KHAAP.cpp", &argc, argv);
@@ -168,8 +175,8 @@ void display_callback(void)
 	glutSwapBuffers();
 }
 
-void draw_particle(void){
-	glutSolidSphere(0.2, 10, 8);
+void draw_particle(GLfloat particle_radius){
+	glutSolidSphere(particle_radius, 10, 8);
 }
 
 void draw_eletron(void){
@@ -177,7 +184,7 @@ void draw_eletron(void){
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, eletron);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	glMaterialfv(GL_FRONT, GL_EMISSION, eletron_emission);
-	draw_particle();
+	draw_particle(0.05);
 }
 
 void draw_proton(void){
@@ -185,7 +192,7 @@ void draw_proton(void){
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, proton);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	glMaterialfv(GL_FRONT, GL_EMISSION, proton_emission);
-	draw_particle();
+	draw_particle(0.15);
 }
 
 void draw_neutron(void){
@@ -193,7 +200,7 @@ void draw_neutron(void){
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, neutron);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
 	glMaterialfv(GL_FRONT, GL_EMISSION, neutron_emission);
-	draw_particle();
+	draw_particle(0.15);
 }
 
 /*
@@ -279,7 +286,7 @@ void keyboard_callback_special(int key, int x, int y)
 
 void spinDisplay(void)
 {
-	spin = spin + 0.5;
+	spin = spin + 0.25;
 	if (spin > 360.0) spin = spin - 360.0;
 	glutPostRedisplay();
     usleep(100);
