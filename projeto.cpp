@@ -1,6 +1,6 @@
 /*
  * projeto.cpp
- * gcc projeto.cpp -o /tmp/temp.run -lm -lglut -lGL -lGLU && /tmp/temp.run
+ * gcc projeto.cpp -o projeto -lSOIL -lglut -lGL -lGLU
  */
 
 #include <GL/gl.h>
@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h> // needed to sleep
+#include <SOIL/SOIL.h>
 
 #define INV -1
 
@@ -40,29 +41,44 @@ const GLfloat neutron_emission[] = {0.05, 0.05, 0.05, 1.0};
 
 const GLfloat high_shininess[] = {100.0};
 
-const GLint camadas[] = {2, 8, 18, 32, 32, 18, 8};
+GLint camadas[] = {2, 8, 18, 32, 32, 18, 8};
+GLuint texture;
 
-const GLint frampes_per_second = 60;
+enum ElectronicLayers : GLint
+{
+	K, 
+	L, 
+	M, 
+	N, 
+	O, 
+	P, 
+	Q 
+};
+
+
+const GLint frames_per_second = 30;
 
 GLboolean rotating = true;
 
 char vec[100];
 
+int elementoBase = 235;
+
 typedef struct Atom
 {
-	char sigla[3];
+	char elemento[255];
 	int protons;
 	int neutrons;
 	int alfa;
 	int beta;
 } Atom;
 
-const Atom decay[] = {
-	{"U",  92, 238 - 92, 1,   INV},	// 0
-	{"Th", 90, 234 - 90, INV, 2},	// 1
-	{"Pa", 91, 234 - 91, INV, 3},	// 2
-	{"U",  92, 234 - 92, 4,   INV},	// 3
-	{"Th", 90, 230 - 90, 5,   INV},	// 4
+const Atom decay238[] = {
+	{"U - Uranium",  92, 238 - 92, 1,   INV},	// 0
+	{"Th - Thorium", 90, 234 - 90, INV, 2},	// 1
+	{"Pa - Protactinium", 91, 234 - 91, INV, 3},	// 2
+	{"U - Uranium",  92, 234 - 92, 4,   INV},	// 3
+	{"Th - Thorium", 90, 230 - 90, 5,   INV},	// 4
 	{"Ra", 88, 226 - 88, 6,   INV},	// 5
 	{"Rn", 86, 222 - 86, 7,   INV},	// 6
 	{"Po", 84, 218 - 84, 8,   9},	// 7
@@ -79,7 +95,30 @@ const Atom decay[] = {
 	{"Pb", 82, 206 - 82, INV, INV}, // 18
 };
 
-const char *text_Atom = "Massa: %d \nN° atômico: %d";
+const Atom decay[] = {
+	{"U - Uranium",  	  		92, 235 - 92, 1,  INV},	// 0 ok
+	{"Th - Thorium", 	  		90, 231 - 90, INV, 2},	// 1 ok
+	{"Pa - Protactinium", 		91, 231 - 91, 3,  INV},	// 2 ok
+	{"Ac - Actinium", 	  		89, 227 - 89, 5,   4},	// 3 ok
+	{"Th - Thorium",	  		90, 227 - 90, 6,  INV},	// 4 ok
+	{"Fr - Francium", 	  		87, 223 - 87, 7,   6},	// 5 ok
+	{"Ra - Radium",	 	  		88, 223 - 88, 8,  INV},	// 6 ok
+	{"At - Astatine", 	  		85, 219 - 85, 9,   8},	// 7 ok
+	{"Rn - Radon219 (Actinon)", 86, 219 - 86, 10, INV},	// 8 ok
+	{"Bi - Bismuth", 83, 215 - 83, INV, 10},	// 9 ok
+	{"Po - Polonium", 84, 215 - 84, 11,  12},	// 10 
+	{"Pb - Lead", 82, 211 - 82, INV, 13},	// 11
+	{"At - Astatine", 85, 215 - 85, 13,  INV},	// 12
+	{"Bi - Bismuth", 83, 211 - 83, 14,  15},	// 13
+	{"Ti - Thalium", 81, 207 - 81, INV, 16},	// 14
+	{"Po - Polonium", 83, 210 - 83, 16,  INV},	// 15
+	{"Pb - Lead", 82, 207 - 82, INV, INV},	// 16
+};
+
+const GLint proton_number = decay[atom_index].protons;
+const GLint neutron_number = decay[atom_index].neutrons;
+
+const char *text_Atom = "%s\nAtomic Mass: %d\nAtomic Number: %d";
 
 /*
 const char *text_Atom[] = {
@@ -125,6 +164,9 @@ void draw_eletron(void);
 void draw_proton(void);
 void draw_neutron(void);
 void render_text(const char *text, int x, int y);
+void loadTexture(int elementIndex);
+void showTexture();
+void setElectronicLayers(int Z);
 
 /**********************************************************************/
 /*                                                                    */
@@ -136,7 +178,7 @@ int main(int argc, char **argv)
 {
 
 	/* inicia o GLUT e alguns parâmetros do OpenGL */
-	init_glut("Projeto KHAAP.cpp", &argc, argv);
+	init_glut("Nuclear Decay Chain Interactive Graphic System (NDCIGS)", &argc, argv);
 
 	/* função de controlo do GLUT */
 	glutMainLoop();
@@ -155,7 +197,6 @@ int main(int argc, char **argv)
  */
 void init_glut(const char *nome_janela, int *argcp, char **argv)
 {
-
 	/* inicia o GLUT */
 	glutInit(argcp, argv);
 
@@ -209,18 +250,16 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	/* define a cor de desenho inicial (azul) */
 	// glColor3f(1.0, 1.0, 1.0);
 
-	glutTimerFunc(1000 / frampes_per_second /*ms*/, timer_callback, 0);
+	loadTexture(235);
+
+	glutTimerFunc(1000 / frames_per_second /*ms*/, timer_callback, 0);
 
 	return;
 }
 
 void draw_object(void)
 {
-
-	const GLint proton_number = decay[atom_index].protons;
-	const GLint neutron_number = decay[atom_index].neutrons;
-
-	GLint eletron_number = 0;
+	GLint electron_number = 0;
 
 	glPushMatrix();
 	for (int i = 0; i < proton_number; i++)
@@ -258,11 +297,11 @@ void draw_object(void)
 			glTranslatef(1.5 + 0.75 * i + 0.05 * (rand()%100-50)/50.0, 0.0, 0.0);
 			draw_eletron();
 			glPopMatrix();
-			eletron_number++;
-			if (eletron_number == proton_number)
+			electron_number++;
+			if (electron_number == proton_number)
 				break;
 		}
-		if (eletron_number == proton_number)
+		if (electron_number == proton_number)
 			break;
 	}
 	// for (int i = 0; i < proton_number; i++)
@@ -285,21 +324,19 @@ void render_text(const char *text, int x, int y)
 
 		if (text[i] == '\n')
 		{ // caso de quebra de linha
-			y = y - 20;
+			y = y - 13;
 			glRasterPos3i(x, y, 1);
 		}
 
 		else
 		{
-			glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, text[i]);
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
 		}
 	}
 }
 
 void interface_text()
 {
-	const char *menu = decay[atom_index].sigla;
-
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	glLoadIdentity();
@@ -309,22 +346,18 @@ void interface_text()
 	glPushMatrix();
 	glLoadIdentity();
 	// glRasterPos2i( 200, 100 );
-	glRasterPos3i(200, 100, 1);
+	glRasterPos3i(10, 475, 1);
 
-	// glColor3f( 1.0, 0.0, 0.0 );
-	for (int i = 0; menu[i] != '\0'; ++i)
-	{
-		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, menu[i]);
-	}
+	// for (int i = 0; menu[i] != '\0'; ++i)
+	// {
+	// 	glutBitmapCharacter(GLUT_BITMAP_9_BY_15, menu[i]);
+	// }
 
-	char text[100];
-
-	sprintf(text, text_Atom, decay[atom_index].protons + decay[atom_index].neutrons, decay[atom_index].protons);
-
-	render_text(text, 200, 100 - 30);
+	char text[255];
+	sprintf(text, text_Atom, decay[atom_index].elemento, decay[atom_index].protons + decay[atom_index].neutrons, decay[atom_index].protons);
+	render_text(text, 10, 475 - 30);
 
 	glPopMatrix();
-
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -334,6 +367,7 @@ void display_callback(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	showTexture();
 	draw_object();
 	interface_text();
 
@@ -343,7 +377,7 @@ void display_callback(void)
 void timer_callback(int i)
 {
 	spinDisplay();
-	glutTimerFunc(1000 / frampes_per_second, timer_callback, 0);
+	glutTimerFunc(1000 / frames_per_second, timer_callback, 0);
 }
 
 void draw_particle(float radius)
@@ -357,7 +391,7 @@ void draw_eletron(void)
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, eletron);
 	glMaterialfv(GL_FRONT, GL_EMISSION, eletron_emission);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
-	draw_particle(0.075);
+	draw_particle(0.06);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
 	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
@@ -443,13 +477,17 @@ void keyboard_callback(unsigned char key, int x, int y)
 	{
 	case 'a':
 	case 'A':
-		if (decay[atom_index].alfa > INV)
+		if (decay[atom_index].alfa > INV){
 			atom_index = decay[atom_index].alfa;
+			setElectronicLayers(decay[atom_index].protons);
+		}
 		break;
 	case 'b':
 	case 'B':
-		if (decay[atom_index].beta > INV)
+		if (decay[atom_index].beta > INV){
 			atom_index = decay[atom_index].beta;
+			setElectronicLayers(decay[atom_index].protons);
+		}
 		break;
 	case 'u':
 	case 'U':
@@ -559,4 +597,123 @@ void mouse_callback(int button, int state, int x, int y)
 	default:
 		break;
 	}
+}
+
+void loadTexture(int elementIndex) {
+    texture = SOIL_load_OGL_texture("./imgs/235.jpg", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+}
+
+void showTexture(){
+    glLoadIdentity();
+
+    // Set up the camera
+    gluLookAt(0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0);
+
+	// Set material properties for emission
+    GLfloat emissionColor[] = {1.0, 1.0, 1.0, 1.0}; // White emission
+    glMaterialfv(GL_FRONT, GL_EMISSION, emissionColor);
+
+    // Draw the plane with the texture
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-6.0, 0.0, 1.0 + 4.0);
+    glTexCoord2f(1.0, 0.0); glVertex3f(-2.75, 0.0, 1.0 + 4.0);
+    glTexCoord2f(1.0, 1.0); glVertex3f(-2.75, 0.0, -1.0 + 4.0);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-6.0, 0.0, -1.0 + 4.0);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+/// @brief Função que calcula a quantidade de elétrons em cada camada da eletrosfera, seguindo o modelo atômico de Bohr
+/// @param Z Numero atômico do elemento
+/// @return Vetor com o número de eletrons em cada indice, correspondendo às camadas em ordem (K, L, M, ...)
+void setElectronicLayers(int Z){
+	//Diagrama de Linus Pauling: "1s, 2s, 2p, 3s, 3p, 4s, 3d, 4p, 5s, 4d, 5p, 6s, 4f, 5d, 6p, 7s, 5f, 6d, 7p"
+	int _1s = 2, _2s = 2, _2p = 6, _3s = 2 , _3p = 6, _4s = 2 , _3d = 10 , _4p = 6, _5s = 2 , _4d = 10 , _5p = 6, _6s = 2 , _4f = 14, _5d = 10 , _6p = 6, _7s = 2 , _5f = 14, _6d = 10 , _7p = 6;
+	// static GLint camadas[7];
+	for(int i = 0; i < Z; i++){
+		// for(int j = 0; j < 7; j++){
+		// }
+		if(_1s > 0) {
+			camadas[ElectronicLayers::K]++;
+			_1s--;
+		}
+		else if(_2s > 0){
+			camadas[ElectronicLayers::L]++;
+			_2s--;
+		}
+		else if(_2p > 0){
+			camadas[ElectronicLayers::L]++;
+			_2p -= 1;
+		}
+		else if(_3s > 0){
+			camadas[ElectronicLayers::M]++;
+			_3s--;
+		}
+		else if(_3p > 0){
+			camadas[ElectronicLayers::M]++;
+			_3p -= 1;
+		}
+		else if(_4s > 0){
+			camadas[ElectronicLayers::N]++;
+			_4s -= 1;
+		}
+		else if(_3d > 0){
+			camadas[ElectronicLayers::M]++;
+			_3d -= 1;
+		}
+		else if(_4p > 0){
+			camadas[ElectronicLayers::N]++;
+			_4p -= 1;
+		}
+		else if(_5s > 0){
+			camadas[ElectronicLayers::O]++;
+			_5s -= 1;
+		}
+		else if(_4d > 0){
+			camadas[ElectronicLayers::N]++;
+			_4d -= 1;
+		}
+		else if(_5p > 0){
+			camadas[ElectronicLayers::O]++;
+			_5p -= 1;
+		}
+		else if(_6s > 0){
+			camadas[ElectronicLayers::P]++;
+			_6s -= 1;
+		}
+		else if(_4f > 0){
+			camadas[ElectronicLayers::N]++;
+			_4f -= 1;
+		}
+		else if(_5d > 0){
+			camadas[ElectronicLayers::O]++;
+			_5d -= 1;
+		}
+		else if(_6p > 0){
+			camadas[ElectronicLayers::P]++;
+			_6p -= 1;
+		}
+		else if(_7s > 0){
+			camadas[ElectronicLayers::Q]++;
+			_7s -= 1;
+		}
+		else if(_5f > 0){
+			camadas[ElectronicLayers::O]++;
+			_5f -= 1;
+		}
+		else if(_6d > 0){
+			camadas[ElectronicLayers::P]++;
+			_6d -= 1;
+		}
+		else if(_7p > 0){
+			camadas[ElectronicLayers::Q]++;
+			_7p -= 1;
+		}
+	}
+
+	// return camadas;
 }
