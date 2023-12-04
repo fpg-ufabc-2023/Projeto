@@ -41,18 +41,26 @@ const GLfloat neutron_emission[] = {0.05, 0.05, 0.05, 1.0};
 
 const GLfloat high_shininess[] = {100.0};
 
-GLint camadas[] = {2, 8, 18, 32, 32, 18, 8};
+const GLfloat not_fermi_radius = 0.1;
+
+GLint camadas[10];
+GLint layer_counter = 0;
+
+GLfloat current_nuclear_radius = 0;
+GLfloat current_valency_radius = 0;
+
+
 GLuint texture;
 
 enum ElectronicLayers : GLint
 {
-	K, 
-	L, 
-	M, 
-	N, 
-	O, 
-	P, 
-	Q 
+	K,
+	L,
+	M,
+	N,
+	O,
+	P,
+	Q
 };
 
 
@@ -71,9 +79,10 @@ typedef struct Atom
 	int neutrons;
 	int alfa;
 	int beta;
+	int radius;
 } Atom;
 
-const Atom decay238[] = {
+/*const Atom decay238[] = {
 	{"U - Uranium",  92, 238 - 92, 1,   INV},	// 0
 	{"Th - Thorium", 90, 234 - 90, INV, 2},	// 1
 	{"Pa - Protactinium", 91, 234 - 91, INV, 3},	// 2
@@ -93,30 +102,27 @@ const Atom decay238[] = {
 	{"Ti", 81, 206 - 81, INV, 18},	// 16
 	{"Po", 84, 210 - 84, 18,  INV},	// 17
 	{"Pb", 82, 206 - 82, INV, INV}, // 18
-};
+};*/
 
 const Atom decay[] = {
-	{"U - Uranium",  	  		92, 235 - 92, 1,  INV},	// 0 ok
-	{"Th - Thorium", 	  		90, 231 - 90, INV, 2},	// 1 ok
-	{"Pa - Protactinium", 		91, 231 - 91, 3,  INV},	// 2 ok
-	{"Ac - Actinium", 	  		89, 227 - 89, 5,   4},	// 3 ok
-	{"Th - Thorium",	  		90, 227 - 90, 6,  INV},	// 4 ok
-	{"Fr - Francium", 	  		87, 223 - 87, 7,   6},	// 5 ok
-	{"Ra - Radium",	 	  		88, 223 - 88, 8,  INV},	// 6 ok
-	{"At - Astatine", 	  		85, 219 - 85, 9,   8},	// 7 ok
-	{"Rn - Radon219 (Actinon)", 86, 219 - 86, 10, INV},	// 8 ok
-	{"Bi - Bismuth", 83, 215 - 83, INV, 10},	// 9 ok
-	{"Po - Polonium", 84, 215 - 84, 11,  12},	// 10 
-	{"Pb - Lead", 82, 211 - 82, INV, 13},	// 11
-	{"At - Astatine", 85, 215 - 85, 13,  INV},	// 12
-	{"Bi - Bismuth", 83, 211 - 83, 14,  15},	// 13
-	{"Ti - Thalium", 81, 207 - 81, INV, 16},	// 14
-	{"Po - Polonium", 83, 210 - 83, 16,  INV},	// 15
-	{"Pb - Lead", 82, 207 - 82, INV, INV},	// 16
+	{"U - Uranium",  	  		92, 235 - 92, 1,  INV, 196},	// 0 ok
+	{"Th - Thorium", 	  		90, 231 - 90, INV,  2, 206},	// 1 ok
+	{"Pa - Protactinium", 		91, 231 - 91, 3,  INV, 200},	// 2 ok
+	{"Ac - Actinium", 	  		89, 227 - 89, 5,    4, 215},	// 3 ok
+	{"Th - Thorium",	  		90, 227 - 90, 6,  INV, 206},	// 4 ok
+	{"Fr - Francium", 	  		87, 223 - 87, 7,    6, 260},	// 5 ok
+	{"Ra - Radium",	 	  		88, 223 - 88, 8,  INV, 221},	// 6 ok
+	{"At - Astatine", 	  		85, 219 - 85, 9,    8, 150},	// 7 ok
+	{"Rn - Radon219 (Actinon)", 86, 219 - 86, 10, INV, 150},	// 8 ok
+	{"Bi - Bismuth", 			83, 215 - 83, INV, 10, 148},	// 9 ok
+	{"Po - Polonium", 			84, 215 - 84, 11,  12, 140},	// 10
+	{"Pb - Lead", 				82, 211 - 82, INV, 13, 146},	// 11
+	{"At - Astatine", 			85, 215 - 85, 13, INV, 150},	// 12
+	{"Bi - Bismuth", 			83, 211 - 83, 14,  15, 148},	// 13
+	{"Ti - Thalium", 			81, 207 - 81, INV, 16, 145},	// 14
+	{"Po - Polonium",			83, 210 - 83, 16, INV, 140},	// 15
+	{"Pb - Lead", 				82, 207 - 82, INV,INV, 148},	// 16
 };
-
-const GLint proton_number = decay[atom_index].protons;
-const GLint neutron_number = decay[atom_index].neutrons;
 
 const char *text_Atom = "%s\nAtomic Mass: %d\nAtomic Number: %d";
 
@@ -252,6 +258,8 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 
 	loadTexture(235);
 
+	setElectronicLayers(decay[atom_index].protons);
+
 	glutTimerFunc(1000 / frames_per_second /*ms*/, timer_callback, 0);
 
 	return;
@@ -259,7 +267,12 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 
 void draw_object(void)
 {
+	const GLint proton_number = decay[atom_index].protons;
+	const GLint neutron_number = decay[atom_index].neutrons;
+	const GLfloat raio_atomico = decay[atom_index].radius;
+
 	GLint electron_number = 0;
+
 
 	glPushMatrix();
 	for (int i = 0; i < proton_number; i++)
@@ -267,7 +280,7 @@ void draw_object(void)
 		glPushMatrix();
 
 		glRotatef(360.0 * (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0);
-		glTranslatef(0.5 + 0.1 * (rand() % 100 - 50) / 50.0, 0, 0);
+		glTranslatef(current_nuclear_radius + 0.1 * (rand() % 100 - 50) / 50.0, 0, 0);
 
 		// glRotatef((GLfloat)i * 360.0 / proton_number, 0.0, 1.0, 0.0);
 		// glTranslatef(0.5 * (rand()%100-50)/50.0, 0.5 * (rand()%100-50)/50.0, 0.5 * (rand()%100-50)/50.0);
@@ -280,7 +293,7 @@ void draw_object(void)
 		glPushMatrix();
 
 		glRotatef(360.0 * (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0);
-		glTranslatef(0.5 + 0.1 * (rand() % 100 - 50) / 50.0, 0, 0);
+		glTranslatef(current_nuclear_radius + 0.1 * (rand() % 100 - 50) / 50.0, 0, 0);
 
 		// glRotatef((GLfloat)(i * 360.0 / neutron_number + 180.0 / proton_number), 0.0, 1.0, 0.0);
 		// glTranslatef(-0.5 * (rand()%100-50)/50.0, -0.5 * (rand()%100-50)/50.0, -0.5 * (rand()%100-50)/50.0);
@@ -288,13 +301,13 @@ void draw_object(void)
 		glPopMatrix();
 	}
 
-	for (int i = 0; i < sizeof(camadas); i++)
+	for (int i = 0; i < sizeof(camadas)/sizeof(camadas[0]); i++)
 	{
 		for (int j = 0; j < camadas[i]; j++)
 		{
 			glPushMatrix();
 			glRotatef((GLfloat)spin + j * 360.0 / camadas[i] + 2.5 * (rand()%100-50)/50.0, 0.0, 1.0, 0.0);
-			glTranslatef(1.5 + 0.75 * i + 0.05 * (rand()%100-50)/50.0, 0.0, 0.0);
+			glTranslatef(1.5 + 4.0 * ((raio_atomico/200.0) / layer_counter) * i + 0.05 * (rand()%100-50)/50.0, 0.0, 0.0);
 			draw_eletron();
 			glPopMatrix();
 			electron_number++;
@@ -403,7 +416,7 @@ void draw_proton(void)
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, proton);
 	glMaterialfv(GL_FRONT, GL_EMISSION, proton_emission);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
-	draw_particle(0.1);
+	draw_particle(0.15);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
 	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
@@ -415,7 +428,7 @@ void draw_neutron(void)
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, neutron);
 	glMaterialfv(GL_FRONT, GL_EMISSION, neutron_emission);
 	glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
-	draw_particle(0.1);
+	draw_particle(0.15);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, text_ambient);
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, text_ambient);
 	glMaterialfv(GL_FRONT, GL_EMISSION, text_ambient);
@@ -634,6 +647,9 @@ void setElectronicLayers(int Z){
 	//Diagrama de Linus Pauling: "1s, 2s, 2p, 3s, 3p, 4s, 3d, 4p, 5s, 4d, 5p, 6s, 4f, 5d, 6p, 7s, 5f, 6d, 7p"
 	int _1s = 2, _2s = 2, _2p = 6, _3s = 2 , _3p = 6, _4s = 2 , _3d = 10 , _4p = 6, _5s = 2 , _4d = 10 , _5p = 6, _6s = 2 , _4f = 14, _5d = 10 , _6p = 6, _7s = 2 , _5f = 14, _6d = 10 , _7p = 6;
 	// static GLint camadas[7];
+	for (int i = 0; i < sizeof(camadas)/sizeof(camadas[0]); i++) camadas[i] = 0;
+	layer_counter = 0;
+
 	for(int i = 0; i < Z; i++){
 		// for(int j = 0; j < 7; j++){
 		// }
@@ -714,6 +730,21 @@ void setElectronicLayers(int Z){
 			_7p -= 1;
 		}
 	}
+
+	printf("[ ");
+	for (int i = 0; i < sizeof(camadas)/sizeof(camadas[0]); i++){
+		printf("%d  ", camadas[i]);
+		if(camadas[i] != 0) layer_counter++;
+	}
+	printf("]\n");
+
+	current_nuclear_radius = not_fermi_radius * cbrt(decay[atom_index].protons + decay[atom_index].neutrons);
+
+	// current_valency_radius = 5.8 * pow(layer_counter,2.0)/(decay[atom_index].protons);
+
+
+	printf("%f\n", current_nuclear_radius);
+
 
 	// return camadas;
 }
