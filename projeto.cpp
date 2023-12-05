@@ -107,14 +107,14 @@ typedef struct Atom
 const Atom decay[] = {
 	{"U - Uranium",  	  		92, 235 - 92, 1,  INV, 196},	// 0 ok
 	{"Th - Thorium", 	  		90, 231 - 90, INV,  2, 206},	// 1 ok
-	{"Pa - Protactinium", 		91, 231 - 91, 3,  INV, 200},	// 2 ok
+	{"Pa - Protactinium", 		91, 231 - 91, 3,  INV, 200},		// 2 ok
 	{"Ac - Actinium", 	  		89, 227 - 89, 5,    4, 215},	// 3 ok
 	{"Th - Thorium",	  		90, 227 - 90, 6,  INV, 206},	// 4 ok
-	{"Fr - Francium", 	  		87, 223 - 87, 7,    6, 260},	// 5 ok
-	{"Ra - Radium",	 	  		88, 223 - 88, 8,  INV, 221},	// 6 ok
+	{"Fr - Francium", 	  		87, 223 - 87, 7,    6, 260},	// 5 ok (sem imagem)
+	{"Ra - Radium",	 	  		88, 223 - 88, 8,  INV, 221},	// 6 ok 
 	{"At - Astatine", 	  		85, 219 - 85, 9,    8, 150},	// 7 ok
-	{"Rn - Radon219 (Actinon)", 86, 219 - 86, 10, INV, 150},	// 8 ok
-	{"Bi - Bismuth", 			83, 215 - 83, INV, 10, 148},	// 9 ok
+	{"Rn - Radon219 (Actinon)", 86, 219 - 86, 10, INV, 150},		// 8 ok (sem imagem)
+	{"Bi - Bismuth", 			83, 215 - 83, INV, 10, 148},	// 9 ok	
 	{"Po - Polonium", 			84, 215 - 84, 11,  12, 140},	// 10
 	{"Pb - Lead", 				82, 211 - 82, INV, 13, 146},	// 11
 	{"At - Astatine", 			85, 215 - 85, 13, INV, 150},	// 12
@@ -124,7 +124,7 @@ const Atom decay[] = {
 	{"Pb - Lead", 				82, 207 - 82, INV,INV, 148},	// 16
 };
 
-const char *text_Atom = "%s\nAtomic Mass: %d\nAtomic Number: %d";
+const char *text_Atom = "%s\nAtomic Mass: %d\nAtomic Number: %d\nAlfa: %s\nBeta: %s";
 
 /*
 const char *text_Atom[] = {
@@ -170,7 +170,7 @@ void draw_eletron(void);
 void draw_proton(void);
 void draw_neutron(void);
 void render_text(const char *text, int x, int y);
-void loadTexture(int elementIndex);
+void loadTexture();
 void showTexture();
 void setElectronicLayers(int Z);
 
@@ -256,7 +256,7 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	/* define a cor de desenho inicial (azul) */
 	// glColor3f(1.0, 1.0, 1.0);
 
-	loadTexture(235);
+	loadTexture();
 
 	setElectronicLayers(decay[atom_index].protons);
 
@@ -367,7 +367,7 @@ void interface_text()
 	// }
 
 	char text[255];
-	sprintf(text, text_Atom, decay[atom_index].elemento, decay[atom_index].protons + decay[atom_index].neutrons, decay[atom_index].protons);
+	sprintf(text, text_Atom, decay[atom_index].elemento, decay[atom_index].protons + decay[atom_index].neutrons, decay[atom_index].protons, decay[atom_index].alfa > -1 ? decay[decay[atom_index].alfa].elemento : "-", decay[atom_index].beta > -1 ? decay[decay[atom_index].beta].elemento : "-");
 	render_text(text, 10, 475 - 30);
 
 	glPopMatrix();
@@ -492,14 +492,12 @@ void keyboard_callback(unsigned char key, int x, int y)
 	case 'A':
 		if (decay[atom_index].alfa > INV){
 			atom_index = decay[atom_index].alfa;
-			setElectronicLayers(decay[atom_index].protons);
 		}
 		break;
 	case 'b':
 	case 'B':
 		if (decay[atom_index].beta > INV){
 			atom_index = decay[atom_index].beta;
-			setElectronicLayers(decay[atom_index].protons);
 		}
 		break;
 	case 'u':
@@ -521,6 +519,8 @@ void keyboard_callback(unsigned char key, int x, int y)
 	default:
 		break;
 	}
+	setElectronicLayers(decay[atom_index].protons);
+	loadTexture();
 	return;
 }
 
@@ -575,6 +575,9 @@ void menu_callback(int value)
 		break;
 	}
 
+	setElectronicLayers(decay[atom_index].protons);
+	loadTexture();
+
 	/* Manda o redesenhar o ecr� quando o menu for desactivado */
 	glutPostRedisplay();
 
@@ -612,8 +615,21 @@ void mouse_callback(int button, int state, int x, int y)
 	}
 }
 
-void loadTexture(int elementIndex) {
-    texture = SOIL_load_OGL_texture("./imgs/235.jpg", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+void loadTexture() {
+	char imgPath[255] = "./imgs/%d.jpg";
+	
+	sprintf(imgPath, imgPath, decay[atom_index].protons);
+	
+	printf("%s\n", imgPath);
+	
+	/*if(stat(imgPath, &sb) == 0 && (sb.st_mode & S_IFDIR))
+	{*/
+		texture = SOIL_load_OGL_texture(imgPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+	/*}
+	else
+	{
+		texture = SOIL_load_OGL_texture("./imgs/black.jpg", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+	}    */
 }
 
 void showTexture(){
@@ -631,10 +647,10 @@ void showTexture(){
     glBindTexture(GL_TEXTURE_2D, texture);
 
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0, 0.0); glVertex3f(-6.0, 0.0, 1.0 + 4.0);
-    glTexCoord2f(1.0, 0.0); glVertex3f(-2.75, 0.0, 1.0 + 4.0);
-    glTexCoord2f(1.0, 1.0); glVertex3f(-2.75, 0.0, -1.0 + 4.0);
-    glTexCoord2f(0.0, 1.0); glVertex3f(-6.0, 0.0, -1.0 + 4.0);
+    glTexCoord2f(0.0, 0.0); glVertex3f(-6.0, 0.0, 5.0);
+    glTexCoord2f(1.0, 0.0); glVertex3f(-3.0, 0.0, 5.0);
+    glTexCoord2f(1.0, 1.0); glVertex3f(-3.0, 0.0, 3.0);
+    glTexCoord2f(0.0, 1.0); glVertex3f(-6.0, 0.0, 3.0);
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
