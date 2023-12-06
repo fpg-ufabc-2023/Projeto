@@ -101,7 +101,7 @@ const Atom decay[] = {
 	{"Fr - Francium", 87, 223 - 87, 7, 6, 260},				 // 5 ok (sem imagem)
 	{"Ra - Radium", 88, 223 - 88, 8, INV, 221},				 // 6 ok
 	{"At - Astatine", 85, 219 - 85, 9, 8, 150},				 // 7 ok
-	{"Rn - Radon219 (Actinon)", 86, 219 - 86, 10, INV, 150}, // 8 ok (sem imagem)
+	{"Rn - Radon 219 (Actinon)", 86, 219 - 86, 10, INV, 150}, // 8 ok (sem imagem)
 	{"Bi - Bismuth", 83, 215 - 83, INV, 10, 148},			 // 9 ok
 	{"Po - Polonium", 84, 215 - 84, 11, 12, 140},			 // 10
 	{"Pb - Lead", 82, 211 - 82, INV, 13, 146},				 // 11
@@ -180,6 +180,17 @@ void setElectronicLayers(void);
 int main(int argc, char **argv)
 {
 
+	// int aux[100] = {};
+	// int bux = 0;
+	// for(int i = 0; i<sizeof(decay)/sizeof(decay[0]);i++)aux[decay[i].protons]++;
+	// for(int i = 0; i<100; i++){
+	// 	if(aux[i]>0) {
+	// 		bux++;
+	// 		printf("%d\n", i);
+	// 	}
+	// }
+	// printf("%d\n", bux);
+
 	/* inicia o GLUT e alguns parâmetros do OpenGL */
 	init_glut("Nuclear Decay Chain Interactive Graphic System (NDCIGS)", &argc, argv);
 
@@ -238,8 +249,8 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
-	loadTexture();
 	setElectronicLayers();
+	loadTexture();
 
 }
 
@@ -289,7 +300,7 @@ void reshape_callback(int w, int h)
 				6.0 * (GLfloat)w / ((GLfloat)h),
 				-6.0, 6.0, -10.0, 10.0);
 
-	printf("%d\t%d\n", w, h);
+	// printf("%d\t%d\n", w, h);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -338,8 +349,8 @@ void keyboard_callback(unsigned char key, int x, int y)
 		break;
 	}
 
-	loadTexture();
-	setElectronicLayers();
+	// loadTexture();
+	// setElectronicLayers();
 
 }
 
@@ -421,8 +432,8 @@ void mouse_callback(int button, int state, int x, int y)
 
 	const GLfloat click[2] = {relative_x, relative_y};
 
-	printf("(%f,%f)\n", relative_x, relative_y);
-	fflush(stdout);
+	// printf("(%f,%f)\n", relative_x, relative_y);
+	// fflush(stdout);
 
 	// Lidar efetivamente com click
 	switch (button)
@@ -462,7 +473,7 @@ void timer_callback(int fps)
  */
 void menu_callback(int value)
 {
-	printf("Menu: %d\n", value);
+	// printf("Menu: %d\n", value);
 	switch (value)
 	{
 	case 0:
@@ -486,8 +497,8 @@ void menu_callback(int value)
 	}
 
 
-	loadTexture();
-	setElectronicLayers();
+	// loadTexture();
+	// setElectronicLayers();
 
 	/* Manda o redesenhar o ecra quando o menu for desactivado */
 	glutPostRedisplay();
@@ -619,10 +630,10 @@ void draw_interface(void)
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0);	glVertex3f(-6.0, -5.0, 0.0);
-		glTexCoord2f(1.0, 0.0);	glVertex3f(-3.0, -5.0, 0.0);
-		glTexCoord2f(1.0, 1.0);	glVertex3f(-3.0, -3.0, 0.0);
-		glTexCoord2f(0.0, 1.0);	glVertex3f(-6.0, -3.0, 0.0);
+		glTexCoord2f(0.0, 0.0);	glVertex3f(-5.5, -5.5, 0.0);
+		glTexCoord2f(1.0, 0.0);	glVertex3f(-3.5, -5.5, 0.0);
+		glTexCoord2f(1.0, 1.0);	glVertex3f(-3.5, -3.5, 0.0);
+		glTexCoord2f(0.0, 1.0);	glVertex3f(-5.5, -3.5, 0.0);
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
@@ -705,7 +716,7 @@ void alfa_decay(void)
 {
 	if (decay[atom_index].alfa > INV)
 	{
-		printf("Decaimento Alfa\n");
+		printf("\nDecaimento Alfa\t");
 		atom_index = decay[atom_index].alfa;
 		setElectronicLayers();
 		loadTexture();
@@ -716,7 +727,7 @@ void beta_decay(void)
 {
 	if (decay[atom_index].beta > INV)
 	{
-		printf("Decaimento Beta\n");
+		printf("\nDecaimento Beta\t");
 		atom_index = decay[atom_index].beta;
 		setElectronicLayers();
 		loadTexture();
@@ -760,10 +771,10 @@ void render_text(const char *text, int x, int y)
 
 void loadTexture(void)
 {
-	char imgPath[255] = "./imgs/%d.jpg";
+	char imgPath[255] = "./imgs/%d.png";
 	sprintf(imgPath, imgPath, decay[atom_index].protons);
 
-	printf("%s\n", imgPath);
+	printf("%s\t", imgPath);
 
 	texture = SOIL_load_OGL_texture(imgPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
 }
@@ -883,20 +894,18 @@ void setElectronicLayers(void)
 		}
 	}
 
-	printf("[ ");
+	// printf("[ ");
 	for (int i = 0; i < sizeof(camadas) / sizeof(camadas[0]); i++)
 	{
-		printf("%d  ", camadas[i]);
+		// printf("%d  ", camadas[i]);
 		if (camadas[i] != 0)
 			layer_counter++;
 	}
-	printf("]\n");
+	// printf("]\t");
 
 	current_nuclear_radius = not_fermi_radius * cbrt(decay[atom_index].protons + decay[atom_index].neutrons);
 
 	// current_valency_radius = 5.8 * pow(layer_counter,2.0)/(decay[atom_index].protons);
-
-	printf("%f\n", current_nuclear_radius);
 
 	// return camadas;
 }
