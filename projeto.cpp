@@ -64,7 +64,7 @@ const GLfloat high_shininess[] = {100.0};
 
 const GLfloat not_fermi_radius = 0.1;
 
-const GLint frames_per_second = 10;
+const GLint frames_per_second = 30;
 
 const GLfloat beta_button[2] = {5.25, 0.0};
 const GLfloat alfa_button[2] = {-5.25, 0.0};
@@ -121,6 +121,7 @@ const char *text_Atom = "%s\nAtomic Mass: %d\nAtomic Number: %d\nAlfa: %s\nBeta:
 static GLfloat relative_color[] = {0.0, 1.0, 0.0, 1.0};
 
 static GLfloat angulo = 0.0;
+static GLfloat angulo_step = 0.5;
 
 static GLint window_width = 0.0;
 static GLint window_height = 0.0;
@@ -332,6 +333,8 @@ void keyboard_callback(unsigned char key, int x, int y)
 	case 'u':
 	case 'U':
 		atom_index = 0;
+		loadTexture();
+		setElectronicLayers();
 		break;
 	case 'r':
 	case 'R':
@@ -340,6 +343,14 @@ void keyboard_callback(unsigned char key, int x, int y)
 	case 's':
 	case 'S':
 		rotating = false;
+		break;
+	case '=':
+	case '+':
+		angulo_step += 0.5;
+		break;
+	case '-':
+	case '_':
+		angulo_step -= 0.5;
 		break;
 	case 27:
 		exit(0); /* Esc: sai do programa */
@@ -486,6 +497,8 @@ void menu_callback(int value)
 
 	case 2:
 		atom_index = 0;
+		loadTexture();
+		setElectronicLayers();
 		break;
 
 	case 10:
@@ -497,8 +510,6 @@ void menu_callback(int value)
 	}
 
 
-	// loadTexture();
-	// setElectronicLayers();
 
 	/* Manda o redesenhar o ecra quando o menu for desactivado */
 	glutPostRedisplay();
@@ -556,7 +567,7 @@ void draw_object(void)
 		for (int j = 0; j < camadas[i]; j++)
 		{
 			glPushMatrix();
-			glRotatef((GLfloat)angulo + j * 360.0 / camadas[i] + 2.5 * (rand() % 100 - 50) / 50.0, 0.0, 0.0, 1.0);
+			glRotatef((GLfloat)angulo*(1+i) + j * 360.0 / camadas[i] + 2.5 * (rand() % 100 - 50) / 50.0, 0.0, 0.0, 1.0);
 			glTranslatef(1.5 + 4.0 * ((raio_atomico / 200.0) / layer_counter) * i + 0.05 * (rand() % 100 - 50) / 50.0, 0.0, 0.0);
 			draw_eletron();
 			glPopMatrix();
@@ -646,7 +657,7 @@ void spinDisplay(void)
 {
 	if (rotating)
 	{
-		angulo = angulo + 0.5;
+		angulo = angulo + angulo_step;
 		if (angulo > 360.0)
 			angulo = angulo - 360.0;
 	}
@@ -716,7 +727,7 @@ void alfa_decay(void)
 {
 	if (decay[atom_index].alfa > INV)
 	{
-		printf("\nDecaimento Alfa\t");
+		printf("Decaimento Alfa\n");
 		atom_index = decay[atom_index].alfa;
 		setElectronicLayers();
 		loadTexture();
@@ -727,7 +738,7 @@ void beta_decay(void)
 {
 	if (decay[atom_index].beta > INV)
 	{
-		printf("\nDecaimento Beta\t");
+		printf("Decaimento Beta\n");
 		atom_index = decay[atom_index].beta;
 		setElectronicLayers();
 		loadTexture();
@@ -774,7 +785,7 @@ void loadTexture(void)
 	char imgPath[255] = "./imgs/%d.png";
 	sprintf(imgPath, imgPath, decay[atom_index].protons);
 
-	printf("%s\t", imgPath);
+	// printf("%s\t", imgPath);
 
 	texture = SOIL_load_OGL_texture(imgPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
 }
