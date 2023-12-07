@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <wchar.h>
+#include <locale.h>
 #include <SOIL/SOIL.h>
 
 /**********************************************************************/
@@ -18,7 +20,7 @@
 
 typedef struct Atom
 {
-	char elemento[255];
+	wchar_t elemento[255];
 	int protons;
 	int neutrons;
 	int alfa;
@@ -93,26 +95,29 @@ const GLfloat button_radius = 0.5;
 };*/
 
 const Atom decay[] = {
-	{"U - Uranium", 92, 235 - 92, 1, INV, 196},				 // 0 ok
-	{"Th - Thorium", 90, 231 - 90, INV, 2, 206},			 // 1 ok
-	{"Pa - Protactinium", 91, 231 - 91, 3, INV, 200},		 // 2 ok
-	{"Ac - Actinium", 89, 227 - 89, 5, 4, 215},				 // 3 ok
-	{"Th - Thorium", 90, 227 - 90, 6, INV, 206},			 // 4 ok
-	{"Fr - Francium", 87, 223 - 87, 7, 6, 260},				 // 5 ok (sem imagem)
-	{"Ra - Radium", 88, 223 - 88, 8, INV, 221},				 // 6 ok
-	{"At - Astatine", 85, 219 - 85, 9, 8, 150},				 // 7 ok
-	{"Rn - Radon 219 (Actinon)", 86, 219 - 86, 10, INV, 150}, // 8 ok (sem imagem)
-	{"Bi - Bismuth", 83, 215 - 83, INV, 10, 148},			 // 9 ok
-	{"Po - Polonium", 84, 215 - 84, 11, 12, 140},			 // 10
-	{"Pb - Lead", 82, 211 - 82, INV, 13, 146},				 // 11
-	{"At - Astatine", 85, 215 - 85, 13, INV, 150},			 // 12
-	{"Bi - Bismuth", 83, 211 - 83, 14, 15, 148},			 // 13
-	{"Ti - Thalium", 81, 207 - 81, INV, 16, 145},			 // 14
-	{"Po - Polonium", 83, 210 - 83, 16, INV, 140},			 // 15
-	{"Pb - Lead", 82, 207 - 82, INV, INV, 148},				 // 16
+	{L"U - Uranium", 92, 235 - 92, 1, INV, 196},				 // 0 ok
+	{L"Th - Thorium", 90, 231 - 90, INV, 2, 206},			 // 1 ok
+	{L"Pa - Protactinium", 91, 231 - 91, 3, INV, 200},		 // 2 ok
+	{L"Ac - Actinium", 89, 227 - 89, 5, 4, 215},				 // 3 ok
+	{L"Th - Thorium", 90, 227 - 90, 6, INV, 206},			 // 4 ok
+	{L"Fr - Francium", 87, 223 - 87, 7, 6, 260},				 // 5 ok (sem imagem)
+	{L"Ra - Radium", 88, 223 - 88, 8, INV, 221},				 // 6 ok
+	{L"At - Astatine", 85, 219 - 85, 9, 8, 150},				 // 7 ok
+	{L"Rn - Radon 219 (Actinon)", 86, 219 - 86, 10, INV, 150}, // 8 ok (sem imagem)
+	{L"Bi - Bismuth", 83, 215 - 83, INV, 10, 148},			 // 9 ok
+	{L"Po - Polonium", 84, 215 - 84, 11, 12, 140},			 // 10
+	{L"Pb - Lead", 82, 211 - 82, INV, 13, 146},				 // 11
+	{L"At - Astatine", 85, 215 - 85, 13, INV, 150},			 // 12
+	{L"Bi - Bismuth", 83, 211 - 83, 14, 15, 148},			 // 13
+	{L"Ti - Thalium", 81, 207 - 81, INV, 16, 145},			 // 14
+	{L"Po - Polonium", 83, 210 - 83, 16, INV, 140},			 // 15
+	{L"Pb - Lead", 82, 207 - 82, INV, INV, 148},				 // 16
 };
 
-const char *text_Atom = "%s\nAtomic Mass: %d\nAtomic Number: %d\nAlfa: %s\nBeta: %s";
+const wchar_t *text_Atom = L"%ls\nAtomic Mass: %d\nAtomic Number: %d\nAlfa: %ls\nBeta: %ls";
+
+const char alphaPath[] = "./imgs/alfa.png";
+const char betaPath[] = "./imgs/beta.png";
 
 /**********************************************************************/
 /*                      Declaração de variáveis                       */
@@ -137,6 +142,8 @@ GLfloat current_nuclear_radius = 0;
 // GLfloat current_valency_radius = 0;
 
 GLuint texture;
+GLuint alfa_texture;
+GLuint beta_texture;
 
 /**********************************************************************/
 /*                        Declaração de funções                       */
@@ -162,13 +169,13 @@ void draw_eletron(void);
 void draw_proton(void);
 void draw_neutron(void);
 
-void draw_circle(const GLfloat c[2], float r);
+void draw_circle(const GLfloat c[2], float r, GLint tex);
 
 void alfa_decay(void);
 void beta_decay(void);
 
 bool closer_than(const GLfloat c_A[2], const GLfloat c_B[2], const GLfloat d);
-void render_text(const char *text, int x, int y);
+void render_text(const wchar_t *text, int x, int y);
 void loadTexture(void);
 void setElectronicLayers(void);
 
@@ -180,6 +187,7 @@ void setElectronicLayers(void);
 
 int main(int argc, char **argv)
 {
+	setlocale(LC_CTYPE, "");
 
 	// int aux[100] = {};
 	// int bux = 0;
@@ -252,6 +260,17 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 
 	setElectronicLayers();
 	loadTexture();
+
+	// printf("%s\t", imgPath);
+
+
+
+	alfa_texture = SOIL_load_OGL_texture(alphaPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
+	beta_texture = SOIL_load_OGL_texture(betaPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID,
+        SOIL_FLAG_MIPMAPS | SOIL_FLAG_NTSC_SAFE_RGB);
+
+	printf("%d\n", alfa_texture);
+	printf("%d\n", beta_texture);
 
 }
 
@@ -602,14 +621,15 @@ void draw_interface(void)
 	// glRasterPos2i( 200, 100 );
 	glRasterPos3i(10, 475, 1);
 
-	char text[255];
-	sprintf(text,
+	wchar_t text[255];
+	swprintf(text,
+		sizeof(text),
 			text_Atom,
 			decay[atom_index].elemento,
 			decay[atom_index].protons + decay[atom_index].neutrons,
 			decay[atom_index].protons,
-			decay[atom_index].alfa > -1 ? decay[decay[atom_index].alfa].elemento : "-",
-			decay[atom_index].beta > -1 ? decay[decay[atom_index].beta].elemento : "-");
+			decay[atom_index].alfa > -1 ? decay[decay[atom_index].alfa].elemento : L"-",
+			decay[atom_index].beta > -1 ? decay[decay[atom_index].beta].elemento : L"-");
 	render_text(text, 10, 475 - 30);
 
 	glPopMatrix();
@@ -623,9 +643,9 @@ void draw_interface(void)
 	/* Exibicao de botoes na interface*/
 	/**********************************/
 
-	draw_circle(alfa_button, button_radius);
+	draw_circle(alfa_button, button_radius, alfa_texture);
 
-	draw_circle(beta_button, button_radius);
+	draw_circle(beta_button, button_radius, beta_texture);
 
 	/**********************************/
 	/* Exibicao de imagem na interface*/
@@ -705,7 +725,7 @@ void draw_neutron(void)
 	glMaterialfv(GL_FRONT, GL_EMISSION, relative_color);
 }
 
-void draw_circle(const GLfloat c[2], float r)
+void draw_circle(const GLfloat c[2], float r, GLint tex)
 {
 	glBegin(GL_POLYGON); // Circulo
 	for (int i = 0; i < 20; i++)
@@ -714,6 +734,22 @@ void draw_circle(const GLfloat c[2], float r)
 		glVertex2f(c[0] + r * cos(angle), c[1] + r * sin(angle));
 	}
 	glEnd();
+
+	glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glBegin(GL_QUADS);
+	for (int i = 0; i < 4; i++)
+	{
+		float angle = 2 * M_PI * i / 4 + M_PI/4;
+		glTexCoord2f(cos(angle)>0?1:0, sin(angle)<0?0:1);	glVertex3f(c[0] + r * cos(angle), c[1] + r * sin(angle),1);
+	}
+	glEnd();
+
+	glDisable(GL_TEXTURE_2D);
+
 }
 
 /**********************************************************************/
@@ -760,13 +796,12 @@ bool closer_than(const GLfloat c_A[2], const GLfloat c_B[2], const GLfloat d)
 }
 
 
-void render_text(const char *text, int x, int y)
+void render_text(const wchar_t *text, int x, int y)
 {
 	glRasterPos3i(x, y, 1);
 
 	for (int i = 0; text[i] != '\0'; ++i)
 	{
-
 		if (text[i] == '\n')
 		{ // caso de quebra de linha
 			y = y - 13;
