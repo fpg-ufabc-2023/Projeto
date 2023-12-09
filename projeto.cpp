@@ -116,7 +116,7 @@ const Atom decay[] = {
 
 const wchar_t *text_Atom = L"%ls\nAtomic Mass: %d\nAtomic Number: %d\nAlfa: %ls\nBeta: %ls";
 
-const char alphaPath[] = "./imgs/alfa.png";
+const char alfaPath[] = "./imgs/alfa.png";
 const char betaPath[] = "./imgs/beta.png";
 
 /**********************************************************************/
@@ -189,17 +189,6 @@ int main(int argc, char **argv)
 {
 	setlocale(LC_CTYPE, "");
 
-	// int aux[100] = {};
-	// int bux = 0;
-	// for(int i = 0; i<sizeof(decay)/sizeof(decay[0]);i++)aux[decay[i].protons]++;
-	// for(int i = 0; i<100; i++){
-	// 	if(aux[i]>0) {
-	// 		bux++;
-	// 		printf("%d\n", i);
-	// 	}
-	// }
-	// printf("%d\n", bux);
-
 	/* inicia o GLUT e alguns parâmetros do OpenGL */
 	init_glut("Nuclear Decay Chain Interactive Graphic System (NDCIGS)", &argc, argv);
 
@@ -261,17 +250,8 @@ void init_glut(const char *nome_janela, int *argcp, char **argv)
 	setElectronicLayers();
 	loadTexture();
 
-	// printf("%s\t", imgPath);
-
-
-
-	alfa_texture = SOIL_load_OGL_texture(alphaPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
-	beta_texture = SOIL_load_OGL_texture(betaPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID,
-        SOIL_FLAG_MIPMAPS | SOIL_FLAG_NTSC_SAFE_RGB);
-
-	printf("%d\n", alfa_texture);
-	printf("%d\n", beta_texture);
-
+	alfa_texture = SOIL_load_OGL_texture(alfaPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y | SOIL_FLAG_MULTIPLY_ALPHA);
+	beta_texture = SOIL_load_OGL_texture(betaPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y | SOIL_FLAG_MULTIPLY_ALPHA);
 }
 
 /**********************************************************************/
@@ -378,10 +358,6 @@ void keyboard_callback(unsigned char key, int x, int y)
 	default:
 		break;
 	}
-
-	// loadTexture();
-	// setElectronicLayers();
-
 }
 
 /*
@@ -503,7 +479,6 @@ void timer_callback(int fps)
  */
 void menu_callback(int value)
 {
-	// printf("Menu: %d\n", value);
 	switch (value)
 	{
 	case 0:
@@ -528,12 +503,7 @@ void menu_callback(int value)
 		break;
 	}
 
-
-
-	/* Manda o redesenhar o ecra quando o menu for desactivado */
 	glutPostRedisplay();
-
-	return;
 }
 
 /**********************************************************************/
@@ -562,9 +532,8 @@ void draw_object(void)
 		glRotatef(360.0 * (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0);
 		glTranslatef(current_nuclear_radius + 0.1 * (rand() % 100 - 50) / 50.0, 0, 0);
 
-		// glRotatef((GLfloat)i * 360.0 / proton_number, 0.0, 1.0, 0.0);
-		// glTranslatef(0.5 * (rand()%100-50)/50.0, 0.5 * (rand()%100-50)/50.0, 0.5 * (rand()%100-50)/50.0);
 		draw_proton();
+
 		glPopMatrix();
 	}
 
@@ -575,9 +544,8 @@ void draw_object(void)
 		glRotatef(360.0 * (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0, (rand() % 100 - 50) / 50.0);
 		glTranslatef(current_nuclear_radius + 0.1 * (rand() % 100 - 50) / 50.0, 0, 0);
 
-		// glRotatef((GLfloat)(i * 360.0 / neutron_number + 180.0 / proton_number), 0.0, 1.0, 0.0);
-		// glTranslatef(-0.5 * (rand()%100-50)/50.0, -0.5 * (rand()%100-50)/50.0, -0.5 * (rand()%100-50)/50.0);
 		draw_neutron();
+
 		glPopMatrix();
 	}
 
@@ -588,14 +556,14 @@ void draw_object(void)
 			glPushMatrix();
 			glRotatef((GLfloat)angulo*(1+i) + j * 360.0 / camadas[i] + 2.5 * (rand() % 100 - 50) / 50.0, 0.0, 0.0, 1.0);
 			glTranslatef(1.5 + 4.0 * ((raio_atomico / 200.0) / layer_counter) * i + 0.05 * (rand() % 100 - 50) / 50.0, 0.0, 0.0);
+
 			draw_eletron();
+
 			glPopMatrix();
 			electron_number++;
-			if (electron_number == proton_number)
-				break;
+			if (electron_number == proton_number) break;
 		}
-		if (electron_number == proton_number)
-			break;
+		if (electron_number == proton_number) break;
 	}
 
 	glPopMatrix();
@@ -618,7 +586,6 @@ void draw_interface(void)
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();
-	// glRasterPos2i( 200, 100 );
 	glRasterPos3i(10, 475, 1);
 
 	wchar_t text[255];
@@ -741,10 +708,12 @@ void draw_circle(const GLfloat c[2], float r, GLint tex)
 
 	glBindTexture(GL_TEXTURE_2D, tex);
 	glBegin(GL_QUADS);
+
 	for (int i = 0; i < 4; i++)
 	{
-		float angle = 2 * M_PI * i / 4 + M_PI/4;
-		glTexCoord2f(cos(angle)>0?1:0, sin(angle)<0?0:1);	glVertex3f(c[0] + r * cos(angle), c[1] + r * sin(angle),1);
+		float angle = i * 2.0 * M_PI / 4.0 + M_PI_4;
+		glTexCoord2f(cos(angle)>0?1:0, sin(angle)>0?1:0);
+		glVertex3f(c[0] + r * cos(angle), c[1] + r * sin(angle), 0.01);
 	}
 	glEnd();
 
@@ -819,8 +788,6 @@ void loadTexture(void)
 {
 	char imgPath[255] = "./imgs/%d.png";
 	sprintf(imgPath, imgPath, decay[atom_index].protons);
-
-	// printf("%s\t", imgPath);
 
 	texture = SOIL_load_OGL_texture(imgPath, SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_INVERT_Y);
 }
