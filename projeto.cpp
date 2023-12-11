@@ -110,7 +110,7 @@ const Atom decay[] = {
 	{L"At - Astatine", 85, 215 - 85, 13, INV, 150},			 // 12
 	{L"Bi - Bismuth", 83, 211 - 83, 14, 15, 148},			 // 13
 	{L"Ti - Thalium", 81, 207 - 81, INV, 16, 145},			 // 14
-	{L"Po - Polonium", 83, 210 - 83, 16, INV, 140},			 // 15
+	{L"Po - Polonium", 84, 211 - 84, 16, INV, 140},			 // 15
 	{L"Pb - Lead", 82, 207 - 82, INV, INV, 148},				 // 16
 };
 
