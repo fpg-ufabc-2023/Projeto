@@ -1,6 +1,6 @@
 /*
  * projeto.cpp
- * gcc projeto.cpp -o projeto -lSOIL -lglut -lGL -lGLU
+ * gcc projeto.cpp -o projeto -lSOIL -lglut -lGL -lGLU -lm
  * ./plojeto
  */
 
